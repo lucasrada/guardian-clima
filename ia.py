@@ -305,11 +305,4 @@ def menu_consejo_ia(ultimo_clima=None):
     # ── Mostrar el consejo ───────────────────────────────────
     mostrar_consejo_ia(consejo, datos_clima)
 
-    # Efecto de escritura para resaltar el consejo principal
-    typing_effect(
-        "  ✨ Consejo generado exitosamente. ¡Que tengas un gran día!",
-        velocidad=0.03,
-        estilo="bright_green",
-    )
-
     pausar()
