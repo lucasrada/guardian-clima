@@ -27,11 +27,9 @@ from ui import (
     mostrar_exito,
     mostrar_info,
     typing_effect,
-    mostrar_ascii,
-    ASCII_SOL,
-)
+     )
 
-# Ruta base del módulo (para ubicar archivos CSV junto al script)
+# Ruta base del módulo (para ubicar arfríos CSV junto al script)
 _DIR_BASE = os.path.dirname(os.path.abspath(__file__))
 
 # Condiciones climáticas posibles (en español)
@@ -166,9 +164,9 @@ def consultar_clima(ciudad: str) -> dict | None:
 # ══════════════════════════════════════════════════════════════
 
 def guardar_en_historial(usuario: str, ciudad: str, datos: dict) -> None:
-    """Guarda una consulta climática en el archivo de historial CSV.
+    """Guarda una consulta climática en el arfrío de historial CSV.
 
-    Si el archivo no existe, lo crea con la cabecera correspondiente.
+    Si el arfrío no existe, lo crea con la cabecera correspondiente.
     Cada registro incluye fecha, hora, usuario, ciudad y datos climáticos.
 
     Args:
@@ -177,7 +175,7 @@ def guardar_en_historial(usuario: str, ciudad: str, datos: dict) -> None:
         datos: Dict con las claves temperatura, humedad, viento, condicion.
     """
     ruta_historial = os.path.join(_DIR_BASE, ARCHIVO_HISTORIAL)
-    archivo_existe = os.path.isfile(ruta_historial)
+    arfrío_existe = os.path.isfile(ruta_historial)
 
     ahora = datetime.now()
     fecha = ahora.strftime("%Y-%m-%d")
@@ -197,8 +195,8 @@ def guardar_en_historial(usuario: str, ciudad: str, datos: dict) -> None:
     try:
         with open(ruta_historial, "a", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            # Escribir cabecera solo si el archivo es nuevo
-            if not archivo_existe:
+            # Escribir cabecera solo si el arfrío es nuevo
+            if not arfrío_existe:
                 writer.writerow([
                     "fecha", "hora", "usuario", "ciudad",
                     "temperatura", "humedad", "viento", "condicion",
@@ -223,8 +221,6 @@ def menu_consultar_clima(usuario: str) -> None:
         usuario: Nombre del usuario que realiza la consulta.
     """
     # Mostrar arte del sol como encabezado
-    mostrar_ascii(ASCII_SOL, titulo="Consulta Climática")
-    console.print()
 
     # Solicitar ciudad al usuario
     ciudad = input_hacker("Ingresá el nombre de la ciudad")
@@ -236,7 +232,6 @@ def menu_consultar_clima(usuario: str) -> None:
     # Mostrar animación de carga
     modo = "API real" if USE_REAL_API else "simulación"
     mostrar_spinner(f"Consultando clima en {ciudad} (modo {modo})...", duracion=2)
-    console.print()
 
     # Consultar datos climáticos
     datos = consultar_clima(ciudad)
@@ -247,7 +242,6 @@ def menu_consultar_clima(usuario: str) -> None:
 
     # Mostrar resultados en panel formateado
     mostrar_clima_panel(datos)
-    console.print()
 
     if not USE_REAL_API:
         mostrar_info("Datos generados en modo simulación (mock). Activá USE_REAL_API en config.py para datos reales.")

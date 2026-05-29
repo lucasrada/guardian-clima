@@ -18,14 +18,7 @@ from ui import (
     typing_effect,
     mostrar_info,
     mostrar_separador,
-    pausar,
-    ASCII_LOGIN,
-    ASCII_ESCUDO,
-    ASCII_SOL,
-    ASCII_GRAFICO,
-    ASCII_HISTORIAL,
-    ASCII_ROBOT,
-)
+    pausar, )
 from auth import iniciar_sesion, registrar_usuario
 from clima import menu_consultar_clima
 from estadisticas import menu_historial_personal, menu_estadisticas_globales
@@ -39,8 +32,6 @@ from ia import menu_consejo_ia
 def pantalla_bienvenida():
     """Muestra la secuencia de bienvenida con efecto Matrix y banner."""
     limpiar_pantalla()
-    efecto_matrix(duracion=3)
-    limpiar_pantalla()
     mostrar_banner()
     typing_effect(
         "  Bienvenido al sistema de monitoreo climático más avanzado",
@@ -52,9 +43,7 @@ def pantalla_bienvenida():
         velocidad=0.03,
         estilo="dim green",
     )
-    console.print()
     mostrar_separador()
-    console.print()
 
 
 # ══════════════════════════════════════════════════════════════
@@ -76,7 +65,6 @@ def menu_acceso():
                 "Registrar Nuevo Usuario",
                 "Salir",
             ],
-            ascii_art=ASCII_LOGIN,
         )
 
         if opcion == "1":
@@ -132,7 +120,6 @@ def menu_principal(usuario):
         mostrar_banner()
 
         console.print(f"  [dim green]Sesión activa:[/dim green] [bright_green]{usuario}[/bright_green]")
-        console.print()
 
         opcion = mostrar_menu(
             "Menú Principal",
@@ -191,14 +178,12 @@ def _consultar_clima_con_retorno(usuario):
     """
     from clima import consultar_clima
     from ui import (
-        mostrar_ascii, ASCII_SOL, input_hacker, mostrar_spinner,
+         input_hacker, mostrar_spinner,
         mostrar_clima_panel, mostrar_error, mostrar_exito, mostrar_info,
     )
     from clima import guardar_en_historial
     from config import USE_REAL_API
 
-    mostrar_ascii(ASCII_SOL, titulo="Consulta Climática")
-    console.print()
 
     ciudad = input_hacker("Ingresá el nombre de la ciudad")
 
@@ -208,7 +193,6 @@ def _consultar_clima_con_retorno(usuario):
 
     modo = "API real" if USE_REAL_API else "simulación"
     mostrar_spinner(f"Consultando clima en {ciudad} (modo {modo})...", duracion=2)
-    console.print()
 
     datos = consultar_clima(ciudad)
 
@@ -217,7 +201,6 @@ def _consultar_clima_con_retorno(usuario):
         return None
 
     mostrar_clima_panel(datos)
-    console.print()
 
     if not USE_REAL_API:
         mostrar_info("Datos generados en modo simulación (mock). Activá USE_REAL_API en config.py para datos reales.")
@@ -261,7 +244,6 @@ def main():
 
     except KeyboardInterrupt:
         # Ctrl+C capturado — salida limpia
-        console.print()
         mostrar_despedida()
         sys.exit(0)
 

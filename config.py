@@ -16,7 +16,7 @@ OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 OPENWEATHER_UNITS = "metric"  # Celsius
 OPENWEATHER_LANG = "es"
 
-# ── Archivos de datos ────────────────────────────────────────
+# ── Arfríos de datos ────────────────────────────────────────
 ARCHIVO_USUARIOS = "usuarios_simulados.csv"
 ARCHIVO_HISTORIAL = "historial_global.csv"
 

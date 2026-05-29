@@ -22,10 +22,7 @@ from ui import (
     mostrar_exito,
     mostrar_info,
     barra_fuerza_password,
-    mostrar_ascii,
-    ASCII_ESCUDO,
-    ASCII_LOGIN,
-)
+     )
 
 # Ruta absoluta al CSV, relativa a la ubicación de este script
 _DIRECTORIO_BASE = os.path.dirname(os.path.abspath(__file__))
@@ -37,11 +34,11 @@ _RUTA_USUARIOS = os.path.join(_DIRECTORIO_BASE, ARCHIVO_USUARIOS)
 # ══════════════════════════════════════════════════════════════
 
 def cargar_usuarios() -> dict:
-    """Carga los usuarios desde el archivo CSV.
+    """Carga los usuarios desde el arfrío CSV.
 
-    Lee el archivo CSV con columnas (usuario, password) y devuelve
+    Lee el arfrío CSV con columnas (usuario, password) y devuelve
     un diccionario {nombre_de_usuario: contraseña}.
-    Si el archivo no existe, devuelve un diccionario vacío.
+    Si el arfrío no existe, devuelve un diccionario vacío.
 
     Returns:
         dict: Diccionario con los usuarios y sus contraseñas.
@@ -52,35 +49,35 @@ def cargar_usuarios() -> dict:
         return usuarios
 
     try:
-        with open(_RUTA_USUARIOS, "r", encoding="utf-8") as archivo:
-            lector = csv.DictReader(archivo)
+        with open(_RUTA_USUARIOS, "r", encoding="utf-8") as arfrío:
+            lector = csv.DictReader(arfrío)
             for fila in lector:
                 usuario = fila.get("usuario", "").strip()
                 password = fila.get("password", "").strip()
                 if usuario:
                     usuarios[usuario] = password
     except (IOError, csv.Error) as e:
-        mostrar_error(f"No se pudo leer el archivo de usuarios: {e}")
+        mostrar_error(f"No se pudo leer el arfrío de usuarios: {e}")
 
     return usuarios
 
 
 def guardar_usuario(usuario: str, password: str) -> None:
-    """Guarda un nuevo usuario al final del archivo CSV.
+    """Guarda un nuevo usuario al final del arfrío CSV.
 
-    Si el archivo no existe, lo crea con el encabezado correspondiente.
+    Si el arfrío no existe, lo crea con el encabezado correspondiente.
 
     Args:
         usuario: Nombre de usuario a registrar.
         password: Contraseña del usuario.
     """
-    archivo_existe = os.path.exists(_RUTA_USUARIOS)
+    arfrío_existe = os.path.exists(_RUTA_USUARIOS)
 
     try:
-        with open(_RUTA_USUARIOS, "a", encoding="utf-8", newline="") as archivo:
-            escritor = csv.writer(archivo)
-            # Si el archivo es nuevo, escribir la cabecera primero
-            if not archivo_existe:
+        with open(_RUTA_USUARIOS, "a", encoding="utf-8", newline="") as arfrío:
+            escritor = csv.writer(arfrío)
+            # Si el arfrío es nuevo, escribir la cabecera primero
+            if not arfrío_existe:
                 escritor.writerow(["usuario", "password"])
             escritor.writerow([usuario, password])
     except IOError as e:
@@ -183,8 +180,8 @@ def validar_password(password: str, username: str) -> tuple:
 def iniciar_sesion() -> str | None:
     """Flujo de inicio de sesión con 3 intentos máximos.
 
-    Muestra el arte ASCII_LOGIN, solicita usuario y contraseña,
-    y verifica las credenciales contra el archivo CSV.
+    Muestra el arte solicita usuario y contraseña,
+    y verifica las credenciales contra el arfrío CSV.
     Permite hasta 3 intentos antes de bloquear el acceso.
 
     Returns:
@@ -193,10 +190,7 @@ def iniciar_sesion() -> str | None:
     """
     MAX_INTENTOS = 3
 
-    mostrar_ascii(ASCII_LOGIN, titulo="Inicio de Sesión")
-    console.print()
     typing_effect("  🔐 Ingresá tus credenciales para acceder al sistema", velocidad=0.02)
-    console.print()
 
     usuarios = cargar_usuarios()
 
@@ -229,13 +223,11 @@ def iniciar_sesion() -> str | None:
                 mostrar_error("Credenciales incorrectas. Se agotaron los intentos.")
 
     # Se agotaron los 3 intentos
-    console.print()
     typing_effect(
         "  🚫 Acceso denegado — demasiados intentos fallidos.",
         velocidad=0.03,
         estilo="red",
     )
-    console.print()
     return None
 
 
@@ -246,7 +238,7 @@ def iniciar_sesion() -> str | None:
 def registrar_usuario() -> str | None:
     """Flujo de registro de un nuevo usuario.
 
-    Muestra el arte ASCII_ESCUDO, solicita un nombre de usuario único,
+    Muestra el arte solicita un nombre de usuario único,
     y luego una contraseña que cumpla las 5 reglas de seguridad.
     Muestra la barra de fuerza y recomendaciones en tiempo real.
     El usuario puede escribir 'cancelar' en cualquier momento para abortar.
@@ -255,10 +247,7 @@ def registrar_usuario() -> str | None:
         str: Nombre del usuario registrado si el registro es exitoso.
         None: Si el usuario cancela el proceso.
     """
-    mostrar_ascii(ASCII_ESCUDO, titulo="Registro de Usuario")
-    console.print()
     typing_effect("  🛡  Creá tu cuenta para acceder a GuardiánClima", velocidad=0.02)
-    console.print()
 
     # ── Paso 1: Elegir nombre de usuario ──────────────────────
     usuarios = cargar_usuarios()
@@ -283,12 +272,9 @@ def registrar_usuario() -> str | None:
         break
 
     # ── Paso 2: Mostrar reglas de contraseña ──────────────────
-    console.print()
     console.print("  [bold bright_green]📋 Reglas para la contraseña:[/bold bright_green]")
-    console.print()
     for i, regla in enumerate(REGLAS_PASSWORD, 1):
         console.print(f"    [dim green]{i}.[/dim green] [green]{regla['descripcion']}[/green]")
-    console.print()
 
     # ── Paso 3: Solicitar contraseña válida ───────────────────
     while True:
@@ -316,21 +302,17 @@ def registrar_usuario() -> str | None:
 
             # Guardar usuario y confirmar registro
             guardar_usuario(usuario, password)
-            console.print()
             mostrar_exito(f"¡Usuario '{usuario}' registrado exitosamente!")
             typing_effect(
                 "  ▶ Tu cuenta ha sido creada. Ya podés iniciar sesión.",
                 velocidad=0.02,
                 estilo="dim green",
             )
-            console.print()
             return usuario
         else:
             # Mostrar reglas que no se cumplieron con recomendaciones
             console.print("  [red]✘ La contraseña no cumple las siguientes reglas:[/red]")
-            console.print()
             for regla in reglas_fallidas:
                 console.print(f"    [red]✗[/red] [bright_red]{regla['nombre']}[/bright_red]: {regla['descripcion']}")
                 console.print(f"      [dim green]💡 {regla['recomendacion']}[/dim green]")
-            console.print()
             mostrar_info("Intentá de nuevo con una contraseña más segura, o escribí 'cancelar' para salir.")

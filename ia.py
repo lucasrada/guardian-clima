@@ -15,9 +15,7 @@ from ui import (
     mostrar_consejo_ia,
     mostrar_error,
     mostrar_info,
-    mostrar_ascii,
-    ASCII_ROBOT,
-    typing_effect,
+     typing_effect,
     pausar,
 )
 
@@ -52,78 +50,78 @@ def consejo_vestimenta_mock(datos_clima):
             "pesado, bufanda, guantes y gorro de lana. Optá por "
             "capas térmicas interiores para mantener el calor corporal."
         )
-        emoji_temp = "[COLD]"
+        emoji_temp = ""
     elif temperatura < 15:
         ropa_base = (
             "El clima está fresco. Te recomiendo una campera abrigada, "
             "vestirte en capas y usar pantalón largo. Una remera "
             "térmica debajo es una gran idea para esta temperatura."
         )
-        emoji_temp = "[COOL]"
+        emoji_temp = ""
     elif temperatura < 25:
         ropa_base = (
             "La temperatura es agradable. Podés usar ropa liviana "
             "como jeans y una remera. Llevá una manga larga o buzo "
             "fino por si refresca, sobre todo a la tarde-noche."
         )
-        emoji_temp = "[OK]"
+        emoji_temp = ""
     else:
         ropa_base = (
             "Hace calor, así que usá ropa fresca y holgada. "
             "No te olvides del protector solar y mantenete "
             "bien hidratado durante el día. Colores claros ayudan."
         )
-        emoji_temp = "[HOT]"
+        emoji_temp = ""
 
     # ── Consideraciones por condición climática ──────────────
     consejos_extra = []
 
     if "lluvia" in condicion or "lluvioso" in condicion or "tormenta" in condicion:
         consejos_extra.append(
-            "[RAIN] Hay pronóstico de lluvia: llevá un paraguas y "
+            "Hay pronóstico de lluvia: llevá un paraguas y "
             "preferí calzado impermeable. Un impermeable o campera "
             "con capucha te va a salvar el día."
         )
     elif "nieve" in condicion or "nevado" in condicion:
         consejos_extra.append(
-            "[SNOW] Se esperan nevadas: usá botas impermeables con "
+            "Se esperan nevadas: usá botas impermeables con "
             "suela antideslizante y ropa térmica reforzada."
         )
     elif "nublado" in condicion or "nube" in condicion:
         consejos_extra.append(
-            "[CLD] El cielo está nublado: aunque no llueva, llevá "
+            "El cielo está nublado: aunque no llueva, llevá "
             "una campera liviana por las dudas."
         )
 
     # ── Consideraciones por viento ───────────────────────────
     if viento > 40:
         consejos_extra.append(
-            "[WIND] Hay vientos muy fuertes: usá un buen rompevientos "
+            "Hay vientos muy fuertes: usá un buen rompevientos "
             "y evitá accesorios que se puedan volar (gorros sueltos, "
             "bufandas largas)."
         )
     elif viento > 20:
         consejos_extra.append(
-            "[WIND] Hay viento moderado: un rompevientos o campera "
+            "Hay viento moderado: un rompevientos o campera "
             "cortaviento sería ideal para estar cómodo."
         )
 
     # ── Consideraciones por humedad ──────────────────────────
     if humedad > 80:
         consejos_extra.append(
-            "[HUM ] La humedad es alta: elegí ropa transpirable de "
+            "La humedad es alta: elegí ropa transpirable de "
             "algodón o materiales técnicos que sequen rápido. "
             "Evitá telas sintéticas pesadas."
         )
     elif humedad < 30:
         consejos_extra.append(
-            "[DRY ] El ambiente está muy seco: hidratá bien tu piel "
+            "El ambiente está muy seco: hidratá bien tu piel "
             "y usá protector labial. Mantenete tomando agua."
         )
 
     # ── Armado del consejo final ─────────────────────────────
     lineas = [
-        f"{emoji_temp}  Consejo para {ciudad} ({temperatura}°C):",
+        f"Consejo para {ciudad} ({temperatura}°C):",
         "",
         ropa_base,
     ]
@@ -134,7 +132,7 @@ def consejo_vestimenta_mock(datos_clima):
             lineas.append(extra)
 
     lineas.append("")
-    lineas.append("[INFO] ¡Vestite bien y disfrutá el día!")
+    lineas.append("¡Vestite bien y disfrutá el día!")
 
     return "\n".join(lineas)
 
@@ -239,8 +237,6 @@ def menu_consejo_ia(ultimo_clima=None):
                       se solicitan los datos al usuario.
     """
     # Mostrar el arte ASCII del robot IA
-    mostrar_ascii(ASCII_ROBOT, titulo="Asistente de Vestimenta IA")
-    console.print()
 
     # ── Obtener datos climáticos ─────────────────────────────
     if ultimo_clima:
@@ -263,7 +259,6 @@ def menu_consejo_ia(ultimo_clima=None):
             return
 
         # Solicitar datos al usuario
-        console.print()
         ciudad = input_hacker("Ciudad")
         if not ciudad:
             ciudad = "Buenos Aires"
@@ -302,16 +297,13 @@ def menu_consejo_ia(ultimo_clima=None):
         }
 
     # ── Generar el consejo ───────────────────────────────────
-    console.print()
     mostrar_spinner("Analizando condiciones climáticas", duracion=1.5)
     mostrar_spinner("Generando consejo de vestimenta con IA", duracion=2)
-    console.print()
 
     consejo = consejo_vestimenta(datos_clima)
 
     # ── Mostrar el consejo ───────────────────────────────────
     mostrar_consejo_ia(consejo, datos_clima)
-    console.print()
 
     # Efecto de escritura para resaltar el consejo principal
     typing_effect(

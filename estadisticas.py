@@ -14,12 +14,9 @@ from ui import (
     mostrar_estadistica,
     mostrar_error,
     mostrar_info,
-    mostrar_ascii,
+    
     mostrar_separador,
-    pausar,
-    ASCII_HISTORIAL,
-    ASCII_GRAFICO,
-)
+    pausar, )
 
 # ── Ruta base del módulo ─────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -30,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # ══════════════════════════════════════════════════════════════
 
 def cargar_historial():
-    """Lee el archivo CSV de historial global y devuelve una lista de dicts.
+    """Lee el arfrío CSV de historial global y devuelve una lista de dicts.
 
     Cada diccionario tiene las claves correspondientes a las columnas
     del CSV: fecha, hora, usuario, ciudad, temperatura, humedad,
@@ -38,12 +35,12 @@ def cargar_historial():
 
     Returns:
         list[dict]: Lista de registros del historial. Vacía si el
-                    archivo no existe o está vacío.
+                    arfrío no existe o está vacío.
     """
     ruta = os.path.join(BASE_DIR, ARCHIVO_HISTORIAL)
     try:
-        with open(ruta, newline="", encoding="utf-8") as archivo:
-            lector = csv.DictReader(archivo)
+        with open(ruta, newline="", encoding="utf-8") as arfrío:
+            lector = csv.DictReader(arfrío)
             return list(lector)
     except FileNotFoundError:
         return []
@@ -62,7 +59,6 @@ def menu_historial_personal(usuario):
     Args:
         usuario (str): Nombre del usuario cuyo historial se consulta.
     """
-    mostrar_ascii(ASCII_HISTORIAL, titulo="Historial Personal")
     mostrar_separador()
 
     # ── Submenú de filtrado ──────────────────────────────────
@@ -128,7 +124,6 @@ def menu_estadisticas_globales():
       • Temperatura promedio global (con 1 decimal).
       • Tabla con el top 5 de ciudades más consultadas.
     """
-    mostrar_ascii(ASCII_GRAFICO, titulo="Estadísticas Globales")
     mostrar_separador()
 
     historial = cargar_historial()
@@ -158,11 +153,9 @@ def menu_estadisticas_globales():
     temp_promedio = sum(temperaturas) / len(temperaturas) if temperaturas else 0.0
 
     # ── Mostrar estadísticas ─────────────────────────────────
-    console.print()
     mostrar_estadistica("Ciudad más consultada", f"{ciudad_top} ({ciudad_top_count} consultas)", icono="[#]")
     mostrar_estadistica("Total de consultas", str(total_consultas), icono="[*]")
     mostrar_estadistica("Temperatura promedio global", f"{temp_promedio:.1f}°C", icono="[+]")
-    console.print()
 
     # ── Top 5 ciudades más consultadas ───────────────────────
     top_5 = conteo_ciudades.most_common(5)
