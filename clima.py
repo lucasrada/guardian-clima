@@ -42,6 +42,21 @@ _CONDICIONES = [
 ]
 
 
+def _detalle_error_openweather(respuesta) -> str:
+    """Extrae un mensaje legible del cuerpo de error de OpenWeather."""
+    try:
+        datos = respuesta.json()
+    except ValueError:
+        datos = {}
+
+    mensaje = datos.get("message") if isinstance(datos, dict) else None
+    if mensaje:
+        return str(mensaje)
+
+    texto = getattr(respuesta, "text", "").strip()
+    return texto[:200] if texto else "sin detalle adicional"
+
+
 # ══════════════════════════════════════════════════════════════
 # CONSULTA MOCK (datos simulados)
 # ══════════════════════════════════════════════════════════════
@@ -128,12 +143,23 @@ def consultar_clima_real(ciudad: str) -> dict | None:
     except requests.exceptions.Timeout:
         mostrar_error("La solicitud tardó demasiado. Intentá de nuevo más tarde.")
     except requests.exceptions.HTTPError as e:
+        detalle = _detalle_error_openweather(respuesta)
         if respuesta.status_code == 401:
-            mostrar_error("API Key inválida. Revisá tu configuración en config.py.")
+            mostrar_error(
+                "OpenWeather rechazó la API key. "
+                "Verificá OPENWEATHER_API_KEY/OPENWEATHERMAP_API_KEY en tu entorno o .env. "
+                "Si la key es nueva, OpenWeather puede demorar unas horas en activarla. "
+                f"Detalle: {detalle}"
+            )
         elif respuesta.status_code == 404:
             mostrar_error(f"Ciudad '{ciudad}' no encontrada. Verificá el nombre e intentá de nuevo.")
+        elif respuesta.status_code in (402, 403):
+            mostrar_error(
+                "OpenWeather respondió que la key no tiene acceso a este servicio. "
+                f"Detalle: {detalle}"
+            )
         else:
-            mostrar_error(f"Error HTTP {respuesta.status_code}: {e}")
+            mostrar_error(f"Error HTTP {respuesta.status_code}: {e}. Detalle: {detalle}")
     except (KeyError, IndexError):
         mostrar_error("La respuesta de la API tiene un formato inesperado.")
     except Exception as e:

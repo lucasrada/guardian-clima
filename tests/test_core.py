@@ -1,9 +1,12 @@
 import csv
+import importlib
+from pathlib import Path
 from types import SimpleNamespace
 
 import auth
 import clima
 import ia
+import requests
 
 
 def test_guardar_usuario_hashea_password(tmp_path, monkeypatch):
@@ -79,6 +82,80 @@ def test_api_real_sin_keys_falla_sin_llamar_servicios(monkeypatch):
 
     assert any("OPENWEATHER_API_KEY" in error for error in errores)
     assert any("GEMINI_API_KEY" in error for error in errores)
+
+
+def test_config_carga_dotenv_y_alias_openweather(tmp_path, monkeypatch):
+    dotenv = tmp_path / ".env"
+    dotenv.write_text(
+        "\n".join(
+            [
+                "GUARDIAN_USE_REAL_API=true",
+                'OPENWEATHERMAP_API_KEY="alias-key"',
+                "GEMINI_API_KEY=gemini-key",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("GUARDIAN_USE_REAL_API", raising=False)
+    monkeypatch.delenv("OPENWEATHER_API_KEY", raising=False)
+    monkeypatch.delenv("OPENWEATHERMAP_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    config_path = Path(__file__).resolve().parents[1] / "config.py"
+    spec = importlib.util.spec_from_file_location("config_dotenv_test", config_path)
+    config_recargado = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(config_recargado)
+
+    assert config_recargado.USE_REAL_API is True
+    assert config_recargado.OPENWEATHER_API_KEY == "alias-key"
+    assert config_recargado.GEMINI_API_KEY == "gemini-key"
+
+
+def test_detalle_error_openweather_usa_mensaje_json():
+    respuesta = SimpleNamespace(
+        json=lambda: {"cod": 401, "message": "Invalid API key"},
+        text='{"cod":401}',
+    )
+
+    assert clima._detalle_error_openweather(respuesta) == "Invalid API key"
+
+
+def test_consultar_clima_real_parsea_respuesta_openweather(monkeypatch):
+    llamadas = []
+
+    class RespuestaFake:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "name": "Buenos Aires",
+                "main": {"temp": 18.26, "humidity": 64},
+                "wind": {"speed": 5.5},
+                "weather": [{"description": "cielo claro"}],
+            }
+
+    def get_fake(url, params, timeout):
+        llamadas.append((url, params, timeout))
+        return RespuestaFake()
+
+    monkeypatch.setattr(clima, "OPENWEATHER_API_KEY", "test-key")
+    monkeypatch.setattr(requests, "get", get_fake)
+
+    datos = clima.consultar_clima_real("Buenos Aires")
+
+    assert datos == {
+        "ciudad": "Buenos Aires",
+        "temperatura": 18.3,
+        "humedad": 64,
+        "viento": 19.8,
+        "condicion": "Cielo claro",
+    }
+    assert llamadas[0][1]["appid"] == "test-key"
+    assert llamadas[0][1]["q"] == "Buenos Aires"
+    assert llamadas[0][2] == 10
 
 
 def test_consejo_mock_incluye_riesgos_climaticos():

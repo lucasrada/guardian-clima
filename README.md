@@ -35,6 +35,8 @@ export OPENWEATHER_API_KEY="tu_api_key_de_openweather"
 export GEMINI_API_KEY="tu_api_key_de_gemini"
 ```
 
+También podés crear un archivo `.env` local con esas mismas variables. Para OpenWeather, la app acepta `OPENWEATHER_API_KEY` y también los alias `OPENWEATHERMAP_API_KEY`, `OPENWEATHER_APP_ID` y `OPENWEATHERMAP_APPID`.
+
 Opcionalmente podés definir `GEMINI_MODEL`; si no se configura, se usa `gemini-3.5-flash`.
 
 ## Uso
