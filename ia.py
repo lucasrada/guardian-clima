@@ -7,15 +7,13 @@
 # generadas localmente (modo mock).
 # ══════════════════════════════════════════════════════════════
 
-from config import USE_REAL_API, GEMINI_API_KEY
+from config import USE_REAL_API, GEMINI_API_KEY, GEMINI_MODEL
 from ui import (
-    console,
     input_hacker,
     mostrar_spinner,
     mostrar_consejo_ia,
     mostrar_error,
     mostrar_info,
-     typing_effect,
     pausar,
 )
 
@@ -50,28 +48,24 @@ def consejo_vestimenta_mock(datos_clima):
             "pesado, bufanda, guantes y gorro de lana. Optá por "
             "capas térmicas interiores para mantener el calor corporal."
         )
-        emoji_temp = ""
     elif temperatura < 15:
         ropa_base = (
             "El clima está fresco. Te recomiendo una campera abrigada, "
             "vestirte en capas y usar pantalón largo. Una remera "
             "térmica debajo es una gran idea para esta temperatura."
         )
-        emoji_temp = ""
     elif temperatura < 25:
         ropa_base = (
             "La temperatura es agradable. Podés usar ropa liviana "
             "como jeans y una remera. Llevá una manga larga o buzo "
             "fino por si refresca, sobre todo a la tarde-noche."
         )
-        emoji_temp = ""
     else:
         ropa_base = (
             "Hace calor, así que usá ropa fresca y holgada. "
             "No te olvides del protector solar y mantenete "
             "bien hidratado durante el día. Colores claros ayudan."
         )
-        emoji_temp = ""
 
     # ── Consideraciones por condición climática ──────────────
     consejos_extra = []
@@ -154,11 +148,15 @@ def consejo_vestimenta_real(datos_clima):
     Returns:
         str: Consejo generado por Gemini, o None si hay un error.
     """
-    try:
-        import google.generativeai as genai
+    if not GEMINI_API_KEY:
+        mostrar_error(
+            "GEMINI_API_KEY no está configurada. "
+            "Definila como variable de entorno o usá el modo offline."
+        )
+        return None
 
-        genai.configure(api_key=GEMINI_API_KEY)
-        modelo = genai.GenerativeModel("gemini-pro")
+    try:
+        from google import genai
 
         temperatura = datos_clima.get("temperatura", "N/A")
         humedad = datos_clima.get("humedad", "N/A")
@@ -180,13 +178,17 @@ def consejo_vestimenta_real(datos_clima):
             f"de prendas, calzado y accesorios. Máximo 6 líneas."
         )
 
-        respuesta = modelo.generate_content(prompt)
+        cliente = genai.Client(api_key=GEMINI_API_KEY)
+        respuesta = cliente.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+        )
         return respuesta.text
 
     except ImportError:
         mostrar_error(
-            "El módulo 'google-generativeai' no está instalado. "
-            "Instalalo con: pip install google-generativeai"
+            "El módulo 'google-genai' no está instalado. "
+            "Instalalo con: pip install google-genai"
         )
         return None
     except Exception as e:

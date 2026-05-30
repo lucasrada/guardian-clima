@@ -23,12 +23,10 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 from rich.align import Align
-from rich.columns import Columns
-from rich.progress import Progress, BarColumn, TextColumn
 from rich.live import Live
 from rich.theme import Theme
 
-from config import APP_NOMBRE, APP_VERSION, THEME_COLORS
+from config import APP_VERSION
 
 # ── Tema personalizado Matrix ────────────────────────────────
 # Definición de estilos personalizados para utilizar en las salidas por consola
@@ -156,7 +154,7 @@ ASCII_DESPEDIDA = r"""      *  .  *
 
 def limpiar_pantalla():
     """Limpia la pantalla de la terminal."""
-    os.system("cls" if os.name == "nt" else "clear")
+    console.clear()
 
 
 def typing_effect(texto, velocidad=0.03, estilo="green"):
@@ -187,15 +185,14 @@ def efecto_matrix(duracion=3, ancho=None):
     # transient=True hace que al terminar se borre la animación de la pantalla
     with Live(console=console, refresh_per_second=15, transient=True) as live:
         while time.time() - inicio < duracion:
-            lineas = []
             texto = Text()
             for col in range(ancho):
                 # 10% de probabilidad de iniciar una nueva animación en la columna
-                if random.random() < 0.1:
-                    columnas[col] = random.randint(1, 4)
+                if random.random() < 0.1:  # nosec B311
+                    columnas[col] = random.randint(1, 4)  # nosec B311
 
                 if columnas[col] > 0:
-                    char = random.choice(chars)
+                    char = random.choice(chars)  # nosec B311
                     # A mayor contador, más brillante; cuando baja se va apagando
                     intensidad = intensidades[min(columnas[col] - 1, len(intensidades) - 1)]
                     texto.append(char, style=intensidad)
@@ -278,7 +275,8 @@ def read_key():
         return ch
     else:
         # En Unix/Linux/Mac usamos tty+termios para poner la terminal en modo raw
-        import tty, termios
+        import termios
+        import tty
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)  # guardamos la config original
         try:
@@ -390,7 +388,7 @@ def input_hacker(prompt):
     # Dibujamos un prompt estilo terminal hacker con bordes box-drawing
     console.print(f"  [dim green]┌──([/dim green][bright_green]guardian[/bright_green][dim green])─[/dim green][dim green][[/dim green][green]{prompt}[/green][dim green]][/dim green]")
     try:
-        valor = console.input(f"  [dim green]└──▶[/dim green] [bright_green]$ [/bright_green]")
+        valor = console.input("  [dim green]└──▶[/dim green] [bright_green]$ [/bright_green]")
     except (EOFError, KeyboardInterrupt):
         valor = ""  # Si se interrumpe la entrada, se retorna una cadena vacía
     return valor.strip()
@@ -399,11 +397,15 @@ def input_hacker(prompt):
 def input_password(prompt):
     """Input para contraseñas (sin eco en pantalla)."""
     import getpass
+
     console.print(f"  [dim green]┌──([/dim green][bright_green]guardian[/bright_green][dim green])─[/dim green][dim green][[/dim green][green]{prompt}[/green][dim green]][/dim green]")
-    console.print(f"  [dim green]└──▶[/dim green] [bright_green]$ [/bright_green]", end="")
+    console.print("  [dim green]└──▶[/dim green] [bright_green]$ [/bright_green]", end="")
     try:
-        # getpass oculta la entrada por teclado, adecuado para contraseñas
-        valor = getpass.getpass(prompt="")
+        if sys.stdin.isatty():
+            # getpass oculta la entrada por teclado, adecuado para contraseñas
+            valor = getpass.getpass(prompt="")
+        else:
+            valor = sys.stdin.readline()
     except (EOFError, KeyboardInterrupt):
         valor = ""
     return valor.strip()

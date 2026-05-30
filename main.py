@@ -7,11 +7,9 @@
 
 import sys
 
-from config import APP_NOMBRE, APP_VERSION
 from ui import (
     console,
     limpiar_pantalla,
-    efecto_matrix,
     mostrar_banner,
     mostrar_menu,
     mostrar_despedida,
@@ -20,7 +18,6 @@ from ui import (
     mostrar_separador,
     pausar, )
 from auth import iniciar_sesion, registrar_usuario
-from clima import menu_consultar_clima
 from estadisticas import menu_historial_personal, menu_estadisticas_globales
 from ia import menu_consejo_ia
 
@@ -135,8 +132,6 @@ def menu_principal(usuario):
 
         if opcion == "1":
             limpiar_pantalla()
-            # Importar consultar_clima para capturar el último resultado
-            from clima import consultar_clima
             ultimo_clima = _consultar_clima_con_retorno(usuario)
             pausar()
 

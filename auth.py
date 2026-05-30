@@ -6,6 +6,9 @@ from __future__ import annotations
 
 import os
 import csv
+import hashlib
+import hmac
+import secrets
 
 from config import (
     ARCHIVO_USUARIOS,
@@ -27,18 +30,79 @@ from ui import (
 # Ruta absoluta al CSV, relativa a la ubicación de este script
 _DIRECTORIO_BASE = os.path.dirname(os.path.abspath(__file__))
 _RUTA_USUARIOS = os.path.join(_DIRECTORIO_BASE, ARCHIVO_USUARIOS)
+_HASH_ALGORITMO = "pbkdf2_sha256"
+_HASH_ITERACIONES = 260_000
 
 
 # ══════════════════════════════════════════════════════════════
 # GESTIÓN DEL ARCHIVO DE USUARIOS
 # ══════════════════════════════════════════════════════════════
 
-def cargar_usuarios() -> dict:
-    """Carga los usuarios desde el arfrío CSV.
+def _hashear_password(password: str) -> str:
+    """Genera un hash PBKDF2-SHA256 con salt único."""
+    salt = secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        _HASH_ITERACIONES,
+    ).hex()
+    return f"{_HASH_ALGORITMO}${_HASH_ITERACIONES}${salt}${digest}"
 
-    Lee el arfrío CSV con columnas (usuario, password) y devuelve
-    un diccionario {nombre_de_usuario: contraseña}.
-    Si el arfrío no existe, devuelve un diccionario vacío.
+
+def _es_hash_password(valor: str) -> bool:
+    """Indica si un valor tiene el formato de hash soportado."""
+    partes = valor.split("$")
+    return len(partes) == 4 and partes[0] == _HASH_ALGORITMO
+
+
+def _verificar_password(password: str, secreto_guardado: str) -> bool:
+    """Verifica una contraseña contra un hash PBKDF2 o un valor legacy."""
+    if not _es_hash_password(secreto_guardado):
+        return hmac.compare_digest(password, secreto_guardado)
+
+    _, iteraciones, salt, digest_guardado = secreto_guardado.split("$", 3)
+    try:
+        iteraciones_int = int(iteraciones)
+    except ValueError:
+        return False
+
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        iteraciones_int,
+    ).hex()
+    return hmac.compare_digest(digest, digest_guardado)
+
+
+def _guardar_usuarios_completos(usuarios: dict[str, str]) -> None:
+    """Reescribe el CSV completo con hashes de contraseña."""
+    try:
+        with open(_RUTA_USUARIOS, "w", encoding="utf-8", newline="") as archivo:
+            escritor = csv.writer(archivo)
+            escritor.writerow(["usuario", "password_hash"])
+            for usuario, secreto in usuarios.items():
+                password_hash = secreto if _es_hash_password(secreto) else _hashear_password(secreto)
+                escritor.writerow([usuario, password_hash])
+    except IOError as e:
+        mostrar_error(f"No se pudo actualizar el archivo de usuarios: {e}")
+
+
+def _actualizar_password_usuario(usuario: str, password: str) -> None:
+    """Migra credenciales legacy en texto plano a hash PBKDF2."""
+    usuarios = cargar_usuarios()
+    usuarios[usuario] = _hashear_password(password)
+    _guardar_usuarios_completos(usuarios)
+
+
+def cargar_usuarios() -> dict[str, str]:
+    """Carga los usuarios desde el archivo CSV.
+
+    Lee el archivo CSV con columnas (usuario, password_hash) y devuelve
+    un diccionario {nombre_de_usuario: secreto_guardado}. También soporta
+    archivos legacy con columna password para poder migrarlos al iniciar sesión.
+    Si el archivo no existe, devuelve un diccionario vacío.
 
     Returns:
         dict: Diccionario con los usuarios y sus contraseñas.
@@ -49,37 +113,42 @@ def cargar_usuarios() -> dict:
         return usuarios
 
     try:
-        with open(_RUTA_USUARIOS, "r", encoding="utf-8") as arfrío:
-            lector = csv.DictReader(arfrío)
+        with open(_RUTA_USUARIOS, "r", encoding="utf-8") as archivo:
+            lector = csv.DictReader(archivo)
             for fila in lector:
                 usuario = fila.get("usuario", "").strip()
-                password = fila.get("password", "").strip()
+                password = (
+                    fila.get("password_hash")
+                    or fila.get("password")
+                    or ""
+                ).strip()
                 if usuario:
                     usuarios[usuario] = password
     except (IOError, csv.Error) as e:
-        mostrar_error(f"No se pudo leer el arfrío de usuarios: {e}")
+        mostrar_error(f"No se pudo leer el archivo de usuarios: {e}")
 
     return usuarios
 
 
 def guardar_usuario(usuario: str, password: str) -> None:
-    """Guarda un nuevo usuario al final del arfrío CSV.
+    """Guarda un nuevo usuario al final del archivo CSV.
 
-    Si el arfrío no existe, lo crea con el encabezado correspondiente.
+    Si el archivo no existe, lo crea con el encabezado correspondiente.
 
     Args:
         usuario: Nombre de usuario a registrar.
         password: Contraseña del usuario.
     """
-    arfrío_existe = os.path.exists(_RUTA_USUARIOS)
+    archivo_existe = os.path.exists(_RUTA_USUARIOS)
+    password_hash = password if _es_hash_password(password) else _hashear_password(password)
 
     try:
-        with open(_RUTA_USUARIOS, "a", encoding="utf-8", newline="") as arfrío:
-            escritor = csv.writer(arfrío)
-            # Si el arfrío es nuevo, escribir la cabecera primero
-            if not arfrío_existe:
-                escritor.writerow(["usuario", "password"])
-            escritor.writerow([usuario, password])
+        with open(_RUTA_USUARIOS, "a", encoding="utf-8", newline="") as archivo:
+            escritor = csv.writer(archivo)
+            # Si el archivo es nuevo, escribir la cabecera primero
+            if not archivo_existe:
+                escritor.writerow(["usuario", "password_hash"])
+            escritor.writerow([usuario, password_hash])
     except IOError as e:
         mostrar_error(f"No se pudo guardar el usuario: {e}")
 
@@ -181,7 +250,7 @@ def iniciar_sesion() -> str | None:
     """Flujo de inicio de sesión con 3 intentos máximos.
 
     Muestra el arte solicita usuario y contraseña,
-    y verifica las credenciales contra el arfrío CSV.
+    y verifica las credenciales contra el archivo CSV.
     Permite hasta 3 intentos antes de bloquear el acceso.
 
     Returns:
@@ -209,7 +278,9 @@ def iniciar_sesion() -> str | None:
         password = input_password("Contraseña")
 
         # Verificar credenciales
-        if usuario in usuarios and usuarios[usuario] == password:
+        if usuario in usuarios and _verificar_password(password, usuarios[usuario]):
+            if not _es_hash_password(usuarios[usuario]):
+                _actualizar_password_usuario(usuario, password)
             mostrar_exito(f"¡Bienvenido, {usuario}! Acceso concedido.")
             typing_effect("  ▶ Cargando sistema...", velocidad=0.03, estilo="dim green")
             return usuario

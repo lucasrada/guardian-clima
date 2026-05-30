@@ -19,17 +19,15 @@ from config import (
     ARCHIVO_HISTORIAL,
 )
 from ui import (
-    console,
     input_hacker,
     mostrar_spinner,
     mostrar_clima_panel,
     mostrar_error,
     mostrar_exito,
     mostrar_info,
-    typing_effect,
      )
 
-# Ruta base del módulo (para ubicar arfríos CSV junto al script)
+# Ruta base del módulo (para ubicar archivos CSV junto al script)
 _DIR_BASE = os.path.dirname(os.path.abspath(__file__))
 
 # Condiciones climáticas posibles (en español)
@@ -61,8 +59,8 @@ def consultar_clima_mock(ciudad: str) -> dict:
         Dict con keys: ciudad, temperatura, humedad, viento, condicion.
     """
     # Crear semilla determinista a partir del nombre de la ciudad
-    semilla = int(hashlib.md5(ciudad.lower().encode("utf-8")).hexdigest(), 16)
-    rng = random.Random(semilla)
+    semilla = int(hashlib.sha256(ciudad.lower().encode("utf-8")).hexdigest(), 16)
+    rng = random.Random(semilla)  # nosec B311
 
     temperatura = round(rng.uniform(-5, 40), 1)
     humedad = rng.randint(20, 100)
@@ -96,6 +94,13 @@ def consultar_clima_real(ciudad: str) -> dict | None:
         import requests
     except ImportError:
         mostrar_error("El módulo 'requests' no está instalado. Ejecutá: pip install requests")
+        return None
+
+    if not OPENWEATHER_API_KEY:
+        mostrar_error(
+            "OPENWEATHER_API_KEY no está configurada. "
+            "Definila como variable de entorno o usá el modo simulación."
+        )
         return None
 
     params = {
@@ -164,9 +169,9 @@ def consultar_clima(ciudad: str) -> dict | None:
 # ══════════════════════════════════════════════════════════════
 
 def guardar_en_historial(usuario: str, ciudad: str, datos: dict) -> None:
-    """Guarda una consulta climática en el arfrío de historial CSV.
+    """Guarda una consulta climática en el archivo de historial CSV.
 
-    Si el arfrío no existe, lo crea con la cabecera correspondiente.
+    Si el archivo no existe, lo crea con la cabecera correspondiente.
     Cada registro incluye fecha, hora, usuario, ciudad y datos climáticos.
 
     Args:
@@ -175,7 +180,7 @@ def guardar_en_historial(usuario: str, ciudad: str, datos: dict) -> None:
         datos: Dict con las claves temperatura, humedad, viento, condicion.
     """
     ruta_historial = os.path.join(_DIR_BASE, ARCHIVO_HISTORIAL)
-    arfrío_existe = os.path.isfile(ruta_historial)
+    archivo_existe = os.path.isfile(ruta_historial)
 
     ahora = datetime.now()
     fecha = ahora.strftime("%Y-%m-%d")
@@ -195,8 +200,8 @@ def guardar_en_historial(usuario: str, ciudad: str, datos: dict) -> None:
     try:
         with open(ruta_historial, "a", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            # Escribir cabecera solo si el arfrío es nuevo
-            if not arfrío_existe:
+            # Escribir cabecera solo si el archivo es nuevo
+            if not archivo_existe:
                 writer.writerow([
                     "fecha", "hora", "usuario", "ciudad",
                     "temperatura", "humedad", "viento", "condicion",

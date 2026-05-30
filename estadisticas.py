@@ -12,7 +12,6 @@ from ui import (
     input_hacker,
     mostrar_tabla_datos,
     mostrar_estadistica,
-    mostrar_error,
     mostrar_info,
     
     mostrar_separador,
@@ -27,7 +26,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # ══════════════════════════════════════════════════════════════
 
 def cargar_historial():
-    """Lee el arfrío CSV de historial global y devuelve una lista de dicts.
+    """Lee el archivo CSV de historial global y devuelve una lista de dicts.
 
     Cada diccionario tiene las claves correspondientes a las columnas
     del CSV: fecha, hora, usuario, ciudad, temperatura, humedad,
@@ -35,12 +34,12 @@ def cargar_historial():
 
     Returns:
         list[dict]: Lista de registros del historial. Vacía si el
-                    arfrío no existe o está vacío.
+                    archivo no existe o está vacío.
     """
     ruta = os.path.join(BASE_DIR, ARCHIVO_HISTORIAL)
     try:
-        with open(ruta, newline="", encoding="utf-8") as arfrío:
-            lector = csv.DictReader(arfrío)
+        with open(ruta, newline="", encoding="utf-8") as archivo:
+            lector = csv.DictReader(archivo)
             return list(lector)
     except FileNotFoundError:
         return []

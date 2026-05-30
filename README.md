@@ -13,7 +13,7 @@ El proyecto fue diseñado con un fuerte enfoque en la experiencia de usuario en 
 
 ## Requisitos del Sistema
 
-*   Python 3.7 o superior (para soporte completo de codificación UTF-8 en terminal).
+*   Python 3.10 o superior.
 *   Las dependencias listadas en el archivo `requirements.txt`.
 
 ## Instalación
@@ -27,20 +27,15 @@ pip install -r requirements.txt
 
 ## Configuración
 
-Antes de ejecutar la aplicación con datos reales, es necesario ajustar el archivo `config.py`:
+Por defecto, la aplicación funciona en modo simulación para facilitar las pruebas sin consumir cuotas de API. Para activar las consultas reales, configurá estas variables de entorno antes de ejecutar la app:
 
-1.  **Modo de operación:**
-    Por defecto, la aplicación funciona en modo simulación para facilitar las pruebas sin consumir cuotas de API. Para activar las consultas reales, cambia la siguiente variable a `True`:
-    ```python
-    USE_REAL_API = True
-    ```
+```bash
+export GUARDIAN_USE_REAL_API=true
+export OPENWEATHER_API_KEY="tu_api_key_de_openweather"
+export GEMINI_API_KEY="tu_api_key_de_gemini"
+```
 
-2.  **API Keys:**
-    Si activaste el modo real, deberás proveer tus propias claves de acceso:
-    ```python
-    OPENWEATHER_API_KEY = "TU_API_KEY_AQUI"
-    GEMINI_API_KEY = "TU_API_KEY_AQUI"
-    ```
+Opcionalmente podés definir `GEMINI_MODEL`; si no se configura, se usa `gemini-3.5-flash`.
 
 ## Uso
 
