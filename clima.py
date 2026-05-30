@@ -41,6 +41,18 @@ _CONDICIONES = [
     "Parcialmente nublado",
 ]
 
+_CAMPOS_HISTORIAL = [
+    "fecha",
+    "hora",
+    "usuario",
+    "ciudad",
+    "temperatura",
+    "sensacion_termica",
+    "humedad",
+    "viento",
+    "condicion",
+]
+
 
 def _detalle_error_openweather(respuesta) -> str:
     """Extrae un mensaje legible del cuerpo de error de OpenWeather."""
@@ -57,6 +69,45 @@ def _detalle_error_openweather(respuesta) -> str:
     return texto[:200] if texto else "sin detalle adicional"
 
 
+def _calcular_sensacion_termica_mock(temperatura: float, humedad: int, viento: float) -> float:
+    """Estima una sensación térmica simple para el modo simulación."""
+    sensacion = temperatura
+
+    if temperatura <= 10 and viento > 10:
+        sensacion -= min(6, viento / 12)
+    elif temperatura >= 27 and humedad > 60:
+        sensacion += min(7, (humedad - 60) / 8)
+    elif viento > 25:
+        sensacion -= 1.0
+
+    return round(sensacion, 1)
+
+
+def _asegurar_esquema_historial(ruta_historial: str) -> bool:
+    """Actualiza historiales viejos para incluir sensacion_termica."""
+    if not os.path.isfile(ruta_historial):
+        return False
+
+    with open(ruta_historial, newline="", encoding="utf-8") as archivo:
+        lector = csv.DictReader(archivo)
+        campos_actuales = lector.fieldnames or []
+        if campos_actuales == _CAMPOS_HISTORIAL:
+            return True
+        filas = list(lector)
+
+    for fila in filas:
+        if not fila.get("sensacion_termica"):
+            fila["sensacion_termica"] = fila.get("temperatura", "")
+
+    with open(ruta_historial, "w", newline="", encoding="utf-8") as archivo:
+        escritor = csv.DictWriter(archivo, fieldnames=_CAMPOS_HISTORIAL)
+        escritor.writeheader()
+        for fila in filas:
+            escritor.writerow({campo: fila.get(campo, "") for campo in _CAMPOS_HISTORIAL})
+
+    return True
+
+
 # ══════════════════════════════════════════════════════════════
 # CONSULTA MOCK (datos simulados)
 # ══════════════════════════════════════════════════════════════
@@ -71,7 +122,8 @@ def consultar_clima_mock(ciudad: str) -> dict:
         ciudad: Nombre de la ciudad a consultar.
 
     Returns:
-        Dict con keys: ciudad, temperatura, humedad, viento, condicion.
+        Dict con keys: ciudad, temperatura, sensacion_termica, humedad,
+        viento, condicion.
     """
     # Crear semilla determinista a partir del nombre de la ciudad
     semilla = int(hashlib.sha256(ciudad.lower().encode("utf-8")).hexdigest(), 16)
@@ -81,10 +133,12 @@ def consultar_clima_mock(ciudad: str) -> dict:
     humedad = rng.randint(20, 100)
     viento = round(rng.uniform(0, 50), 1)
     condicion = rng.choice(_CONDICIONES)
+    sensacion_termica = _calcular_sensacion_termica_mock(temperatura, humedad, viento)
 
     return {
         "ciudad": ciudad.title(),
         "temperatura": temperatura,
+        "sensacion_termica": sensacion_termica,
         "humedad": humedad,
         "viento": viento,
         "condicion": condicion,
@@ -102,8 +156,8 @@ def consultar_clima_real(ciudad: str) -> dict | None:
         ciudad: Nombre de la ciudad a consultar.
 
     Returns:
-        Dict con keys: ciudad, temperatura, humedad, viento, condicion,
-        o None si ocurre un error.
+        Dict con keys: ciudad, temperatura, sensacion_termica, humedad,
+        viento, condicion, o None si ocurre un error.
     """
     try:
         import requests
@@ -129,11 +183,14 @@ def consultar_clima_real(ciudad: str) -> dict | None:
         respuesta = requests.get(OPENWEATHER_BASE_URL, params=params, timeout=10)
         respuesta.raise_for_status()
         datos_api = respuesta.json()
+        datos_main = datos_api["main"]
+        temperatura = round(datos_main["temp"], 1)
 
         return {
             "ciudad": datos_api.get("name", ciudad.title()),
-            "temperatura": round(datos_api["main"]["temp"], 1),
-            "humedad": datos_api["main"]["humidity"],
+            "temperatura": temperatura,
+            "sensacion_termica": round(datos_main.get("feels_like", temperatura), 1),
+            "humedad": datos_main["humidity"],
             "viento": round(datos_api["wind"]["speed"] * 3.6, 1),  # m/s → km/h
             "condicion": datos_api["weather"][0]["description"].capitalize(),
         }
@@ -203,35 +260,32 @@ def guardar_en_historial(usuario: str, ciudad: str, datos: dict) -> None:
     Args:
         usuario: Nombre de usuario que realizó la consulta.
         ciudad: Ciudad consultada.
-        datos: Dict con las claves temperatura, humedad, viento, condicion.
+        datos: Dict con las claves temperatura, sensacion_termica, humedad,
+               viento, condicion.
     """
     ruta_historial = os.path.join(_DIR_BASE, ARCHIVO_HISTORIAL)
-    archivo_existe = os.path.isfile(ruta_historial)
-
-    ahora = datetime.now()
-    fecha = ahora.strftime("%Y-%m-%d")
-    hora = ahora.strftime("%H:%M:%S")
-
-    fila = [
-        fecha,
-        hora,
-        usuario,
-        ciudad,
-        datos.get("temperatura", ""),
-        datos.get("humedad", ""),
-        datos.get("viento", ""),
-        datos.get("condicion", ""),
-    ]
 
     try:
+        archivo_existe = _asegurar_esquema_historial(ruta_historial)
+
+        ahora = datetime.now()
+        fila = {
+            "fecha": ahora.strftime("%Y-%m-%d"),
+            "hora": ahora.strftime("%H:%M:%S"),
+            "usuario": usuario,
+            "ciudad": ciudad,
+            "temperatura": datos.get("temperatura", ""),
+            "sensacion_termica": datos.get("sensacion_termica", datos.get("temperatura", "")),
+            "humedad": datos.get("humedad", ""),
+            "viento": datos.get("viento", ""),
+            "condicion": datos.get("condicion", ""),
+        }
+
         with open(ruta_historial, "a", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
+            writer = csv.DictWriter(f, fieldnames=_CAMPOS_HISTORIAL)
             # Escribir cabecera solo si el archivo es nuevo
             if not archivo_existe:
-                writer.writerow([
-                    "fecha", "hora", "usuario", "ciudad",
-                    "temperatura", "humedad", "viento", "condicion",
-                ])
+                writer.writeheader()
             writer.writerow(fila)
     except OSError as e:
         mostrar_error(f"No se pudo guardar en el historial: {e}")

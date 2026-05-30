@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import auth
 import clima
 import ia
+import main
 import requests
 
 
@@ -45,13 +46,21 @@ def test_consultar_clima_mock_es_determinista():
     segunda = clima.consultar_clima_mock("buenos aires")
 
     assert primera == segunda
-    assert set(primera) == {"ciudad", "temperatura", "humedad", "viento", "condicion"}
+    assert set(primera) == {
+        "ciudad",
+        "temperatura",
+        "sensacion_termica",
+        "humedad",
+        "viento",
+        "condicion",
+    }
 
 
 def test_guardar_en_historial_crea_csv(tmp_path, monkeypatch):
     monkeypatch.setattr(clima, "_DIR_BASE", str(tmp_path))
     datos = {
         "temperatura": 21.5,
+        "sensacion_termica": 20.2,
         "humedad": 70,
         "viento": 12.1,
         "condicion": "Nublado",
@@ -67,6 +76,36 @@ def test_guardar_en_historial_crea_csv(tmp_path, monkeypatch):
     assert filas[0]["usuario"] == "alice"
     assert filas[0]["ciudad"] == "Buenos Aires"
     assert filas[0]["temperatura"] == "21.5"
+    assert filas[0]["sensacion_termica"] == "20.2"
+
+
+def test_guardar_en_historial_migra_csv_legacy(tmp_path, monkeypatch):
+    monkeypatch.setattr(clima, "_DIR_BASE", str(tmp_path))
+    ruta = tmp_path / clima.ARCHIVO_HISTORIAL
+    ruta.write_text(
+        "fecha,hora,usuario,ciudad,temperatura,humedad,viento,condicion\n"
+        "2026-05-30,10:00:00,admin,Córdoba,12.5,70,8,Nublado\n",
+        encoding="utf-8",
+    )
+
+    clima.guardar_en_historial(
+        "admin",
+        "Buenos Aires",
+        {
+            "temperatura": 18.0,
+            "sensacion_termica": 16.7,
+            "humedad": 64,
+            "viento": 19.8,
+            "condicion": "Cielo claro",
+        },
+    )
+
+    with ruta.open(encoding="utf-8", newline="") as archivo:
+        filas = list(csv.DictReader(archivo))
+
+    assert "sensacion_termica" in filas[0]
+    assert filas[0]["sensacion_termica"] == "12.5"
+    assert filas[1]["sensacion_termica"] == "16.7"
 
 
 def test_api_real_sin_keys_falla_sin_llamar_servicios(monkeypatch):
@@ -122,6 +161,33 @@ def test_detalle_error_openweather_usa_mensaje_json():
     assert clima._detalle_error_openweather(respuesta) == "Invalid API key"
 
 
+def test_menu_principal_tiene_acerca_de_y_sin_salida_directa(monkeypatch):
+    captura = {}
+
+    def menu_fake(titulo, opciones):
+        captura["titulo"] = titulo
+        captura["opciones"] = opciones
+        return "6"
+
+    monkeypatch.setattr(main, "limpiar_pantalla", lambda: None)
+    monkeypatch.setattr(main, "mostrar_banner", lambda: None)
+    monkeypatch.setattr(main, "mostrar_menu", menu_fake)
+    monkeypatch.setattr(main, "typing_effect", lambda *args, **kwargs: None)
+    monkeypatch.setattr(main.console, "print", lambda *args, **kwargs: None)
+
+    assert main.menu_principal("admin") == "cerrar_sesion"
+    assert captura["titulo"] == "Menú Principal"
+    assert captura["opciones"] == [
+        "[*] Consultar Clima Actual",
+        "[*] Ver Historial Personal",
+        "[*] Estadísticas Globales",
+        "[*] Consejo de Vestimenta IA",
+        "[*] Acerca de",
+        "[-] Cerrar Sesión",
+    ]
+    assert not any("Salir" in opcion for opcion in captura["opciones"])
+
+
 def test_consultar_clima_real_parsea_respuesta_openweather(monkeypatch):
     llamadas = []
 
@@ -132,7 +198,7 @@ def test_consultar_clima_real_parsea_respuesta_openweather(monkeypatch):
         def json(self):
             return {
                 "name": "Buenos Aires",
-                "main": {"temp": 18.26, "humidity": 64},
+                "main": {"temp": 18.26, "feels_like": 16.94, "humidity": 64},
                 "wind": {"speed": 5.5},
                 "weather": [{"description": "cielo claro"}],
             }
@@ -149,6 +215,7 @@ def test_consultar_clima_real_parsea_respuesta_openweather(monkeypatch):
     assert datos == {
         "ciudad": "Buenos Aires",
         "temperatura": 18.3,
+        "sensacion_termica": 16.9,
         "humedad": 64,
         "viento": 19.8,
         "condicion": "Cielo claro",
@@ -163,6 +230,7 @@ def test_consejo_mock_incluye_riesgos_climaticos():
         {
             "ciudad": "Buenos Aires",
             "temperatura": 12,
+            "sensacion_termica": 8,
             "humedad": 85,
             "viento": 30,
             "condicion": "lluvia ligera",
@@ -172,6 +240,7 @@ def test_consejo_mock_incluye_riesgos_climaticos():
     assert "paraguas" in consejo.lower()
     assert "rompevientos" in consejo.lower()
     assert "humedad" in consejo.lower()
+    assert "sensación 8" in consejo.lower()
 
 
 def test_extraer_texto_gemini_ignora_partes_no_texto():

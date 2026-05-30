@@ -13,6 +13,7 @@ from ui import (
     mostrar_banner,
     mostrar_menu,
     mostrar_despedida,
+    mostrar_acerca_de,
     typing_effect,
     mostrar_info,
     mostrar_separador,
@@ -31,7 +32,7 @@ def pantalla_bienvenida():
     limpiar_pantalla()
     mostrar_banner()
     typing_effect(
-        "  Bienvenido al sistema de monitoreo climático más avanzado",
+        "  Bienvenido a GuardiánClima ITBA",
         velocidad=0.03,
         estilo="green",
     )
@@ -99,15 +100,14 @@ def menu_principal(usuario):
         2. Ver historial personal
         3. Estadísticas globales
         4. Consejo de vestimenta IA
-        5. Cerrar sesión
-        6. Salir del sistema
+        5. Acerca de
+        6. Cerrar sesión
 
     Args:
         usuario: Nombre del usuario autenticado.
 
     Returns:
         str: "cerrar_sesion" si el usuario cierra sesión.
-        str: "salir" si el usuario quiere salir completamente.
     """
     # Variable para guardar la última consulta de clima (para IA)
     ultimo_clima = None
@@ -125,8 +125,8 @@ def menu_principal(usuario):
                 "[*] Ver Historial Personal",
                 "[*] Estadísticas Globales",
                 "[*] Consejo de Vestimenta IA",
+                "[*] Acerca de",
                 "[-] Cerrar Sesión",
-                "[-] Salir del Sistema",
             ],
         )
 
@@ -148,15 +148,17 @@ def menu_principal(usuario):
             menu_consejo_ia(ultimo_clima)
 
         elif opcion == "5":
+            limpiar_pantalla()
+            mostrar_acerca_de()
+            pausar()
+
+        elif opcion == "6":
             typing_effect(
                 f"  [*] Cerrando sesión de {usuario}...",
                 velocidad=0.03,
                 estilo="green",
             )
             return "cerrar_sesion"
-
-        elif opcion == "6":
-            return "salir"
 
 
 def _consultar_clima_con_retorno(usuario):
@@ -226,11 +228,10 @@ def main():
                 break
 
             # Menú principal (post-login)
-            resultado = menu_principal(usuario)
+            menu_principal(usuario)
 
-            if resultado == "salir":
-                break
-            # Si resultado == "cerrar_sesion", vuelve al menú de acceso
+            # Si resultado == "cerrar_sesion", vuelve al menú de acceso.
+            # Desde el Menú de Acceso el usuario puede salir de la aplicación.
             limpiar_pantalla()
             mostrar_banner()
 

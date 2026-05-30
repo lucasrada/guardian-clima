@@ -23,6 +23,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 from rich.align import Align
+from rich.columns import Columns
 from rich.live import Live
 from rich.theme import Theme
 
@@ -448,7 +449,8 @@ def mostrar_clima_panel(datos):
     """Muestra los datos del clima en un panel formateado.
 
     Args:
-        datos: Dict con keys: ciudad, temperatura, humedad, viento, condicion
+        datos: Dict con keys: ciudad, temperatura, sensacion_termica,
+               humedad, viento, condicion
     """
     # Tabla de datos
     table = Table(show_header=False, border_style="green", box=None, padding=(0, 2))
@@ -456,6 +458,7 @@ def mostrar_clima_panel(datos):
     table.add_column("valor", style="bright_green")
 
     table.add_row("Temperatura:", f"{datos.get('temperatura', 'N/A')}°C")
+    table.add_row("Sensación:", f"{datos.get('sensacion_termica', datos.get('temperatura', 'N/A'))}°C")
     table.add_row("Humedad:", f"{datos.get('humedad', 'N/A')}%")
     table.add_row("Viento:", f"{datos.get('viento', 'N/A')} km/h")
     table.add_row("Condición:", f"{datos.get('condicion', 'N/A')}")
@@ -515,6 +518,102 @@ def mostrar_consejo_ia(consejo, datos_clima=None):
         padding=(0, 3),
     )
     console.print(panel)
+
+
+def mostrar_acerca_de():
+    """Muestra una documentación integrada sobre la aplicación."""
+    intro = Panel(
+        Text(
+            "GuardiánClima ITBA es una aplicación de consola en Python para "
+            "registrar usuarios, consultar clima, guardar historial, analizar "
+            "estadísticas y recibir consejos de vestimenta con IA.",
+            style="green",
+        ),
+        title="[bold bright_green]GuardiánClima ITBA[/bold bright_green]",
+        subtitle="[dim green]Los Guardianes del Clima[/dim green]",
+        border_style="green",
+        padding=(1, 2),
+    )
+
+    acceso = Table(title="[bold bright_green]Menú de Acceso[/bold bright_green]", box=None, padding=(0, 1))
+    acceso.add_column("#", style="bright_green", width=3)
+    acceso.add_column("Opción", style="green", no_wrap=True)
+    acceso.add_column("Qué hace", style="green")
+    acceso.add_row("1", "Iniciar sesión", "Ingresa con usuario y contraseña registrados.")
+    acceso.add_row("2", "Registrar usuario", "Crea una cuenta y valida una contraseña segura.")
+    acceso.add_row("3", "Salir", "Finaliza la aplicación.")
+
+    principal = Table(title="[bold bright_green]Menú Principal[/bold bright_green]", box=None, padding=(0, 1))
+    principal.add_column("#", style="bright_green", width=3)
+    principal.add_column("Opción", style="green", no_wrap=True)
+    principal.add_column("Qué hace", style="green")
+    principal.add_row("1", "Consultar clima", "Muestra temperatura, sensación térmica, humedad, viento y condición.")
+    principal.add_row("2", "Historial personal", "Lista consultas propias y permite filtrar por ciudad.")
+    principal.add_row("3", "Estadísticas", "Calcula ciudad top, total, temperatura y sensación promedio.")
+    principal.add_row("4", "Consejo IA", "Gemini recomienda vestimenta usando los datos climáticos.")
+    principal.add_row("5", "Acerca de", "Muestra esta documentación integrada.")
+    principal.add_row("6", "Cerrar sesión", "Vuelve al Menú de Acceso, desde donde se puede salir.")
+
+    seguridad = Panel(
+        Text(
+            "Las contraseñas se validan por longitud, mayúsculas, números, "
+            "símbolos y ausencia del nombre de usuario. Se guardan como hashes "
+            "PBKDF2-SHA256 con salt en usuarios_simulados.csv.",
+            style="green",
+        ),
+        title="[bold bright_green]Seguridad[/bold bright_green]",
+        border_style="green",
+        padding=(1, 2),
+    )
+
+    archivos = Table(title="[bold bright_green]Archivos[/bold bright_green]", box=None, padding=(0, 1))
+    archivos.add_column("Archivo", style="bright_green", no_wrap=True)
+    archivos.add_column("Contenido", style="green")
+    archivos.add_row("usuarios_simulados.csv", "Usuarios y hashes de contraseña.")
+    archivos.add_row(
+        "historial_global.csv",
+        "Fecha, hora, usuario, ciudad, temperatura, sensación térmica, humedad, viento y condición.",
+    )
+
+    apis = Table(title="[bold bright_green]APIs y Datos[/bold bright_green]", box=None, padding=(0, 1))
+    apis.add_column("Componente", style="bright_green", no_wrap=True)
+    apis.add_column("Uso", style="green")
+    apis.add_row("OpenWeatherMap", "Petición HTTP con ciudad y API key; devuelve JSON con clima actual.")
+    apis.add_row("Google Gemini", "Prompt con clima, sensación térmica y contexto; devuelve consejo de vestimenta.")
+    apis.add_row("Modo simulación", "Datos locales deterministas cuando GUARDIAN_USE_REAL_API no está activo.")
+
+    datos = Panel(
+        Text(
+            "El historial permite calcular estadísticas globales y abrir los datos "
+            "en Excel o Google Sheets para gráficos de barras, líneas o torta. "
+            "La app contempla CSV inexistentes, entradas inválidas, historial vacío, "
+            "ciudades no encontradas, problemas de conexión, API keys inválidas y respuestas inesperadas.",
+            style="green",
+        ),
+        title="[bold bright_green]Análisis y errores[/bold bright_green]",
+        border_style="green",
+        padding=(1, 2),
+    )
+
+    equipo = Panel(
+        Text(
+            "María Loreta Miani\n"
+            "Victoria Sassi\n"
+            "Yamila Salomón Giallorenzi\n"
+            "Lucas Rada Lizarraga",
+            style="green",
+        ),
+        title="[bold bright_green]Equipo desarrollador[/bold bright_green]",
+        border_style="green",
+        padding=(1, 2),
+    )
+
+    console.print(intro)
+    console.print(Columns([acceso, principal], equal=True, expand=True))
+    console.print(Columns([seguridad, archivos], equal=True, expand=True))
+    console.print(Columns([apis, datos], equal=True, expand=True))
+    console.print(equipo)
+    console.print(Align.center(Text("Usá las flechas en los menús y ENTER para seleccionar.", style="dim green")))
 
 
 def mostrar_error(mensaje):

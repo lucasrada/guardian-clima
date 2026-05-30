@@ -52,38 +52,39 @@ def _extraer_texto_gemini(respuesta) -> str | None:
 def consejo_vestimenta_mock(datos_clima):
     """Genera consejo de vestimenta contextual basado en datos climáticos.
 
-    Analiza temperatura, humedad, viento y condición meteorológica
-    para armar una recomendación completa y natural en español.
+    Analiza temperatura, sensación térmica, humedad, viento y condición
+    meteorológica para armar una recomendación completa y natural en español.
 
     Args:
-        datos_clima: dict con keys: temperatura, humedad, viento,
-                     condicion, ciudad.
+        datos_clima: dict con keys: temperatura, sensacion_termica,
+                     humedad, viento, condicion, ciudad.
 
     Returns:
         str: Consejo de vestimenta multi-línea formateado.
     """
     temperatura = datos_clima.get("temperatura", 20)
+    sensacion_termica = datos_clima.get("sensacion_termica", temperatura)
     humedad = datos_clima.get("humedad", 50)
     viento = datos_clima.get("viento", 10)
     condicion = datos_clima.get("condicion", "despejado").lower()
     ciudad = datos_clima.get("ciudad", "tu ciudad")
 
     # ── Consejo base según rango de temperatura ──────────────
-    if temperatura < 5:
+    if sensacion_termica < 5:
         ropa_base = (
-            "Hace mucho frío, así que abrigate bien. Usá un abrigo "
+            "Se siente mucho frío, así que abrigate bien. Usá un abrigo "
             "pesado, bufanda, guantes y gorro de lana. Optá por "
             "capas térmicas interiores para mantener el calor corporal."
         )
-    elif temperatura < 15:
+    elif sensacion_termica < 15:
         ropa_base = (
-            "El clima está fresco. Te recomiendo una campera abrigada, "
+            "La sensación térmica está fresca. Te recomiendo una campera abrigada, "
             "vestirte en capas y usar pantalón largo. Una remera "
             "térmica debajo es una gran idea para esta temperatura."
         )
-    elif temperatura < 25:
+    elif sensacion_termica < 25:
         ropa_base = (
-            "La temperatura es agradable. Podés usar ropa liviana "
+            "La sensación térmica es agradable. Podés usar ropa liviana "
             "como jeans y una remera. Llevá una manga larga o buzo "
             "fino por si refresca, sobre todo a la tarde-noche."
         )
@@ -142,7 +143,7 @@ def consejo_vestimenta_mock(datos_clima):
 
     # ── Armado del consejo final ─────────────────────────────
     lineas = [
-        f"Consejo para {ciudad} ({temperatura}°C):",
+        f"Consejo para {ciudad} ({temperatura}°C, sensación {sensacion_termica}°C):",
         "",
         ropa_base,
     ]
@@ -169,8 +170,8 @@ def consejo_vestimenta_real(datos_clima):
     y recibe un consejo generado por IA.
 
     Args:
-        datos_clima: dict con keys: temperatura, humedad, viento,
-                     condicion, ciudad.
+        datos_clima: dict con keys: temperatura, sensacion_termica,
+                     humedad, viento, condicion, ciudad.
 
     Returns:
         str: Consejo generado por Gemini, o None si hay un error.
@@ -193,6 +194,7 @@ def consejo_vestimenta_real(datos_clima):
             from google import genai
 
         temperatura = datos_clima.get("temperatura", "N/A")
+        sensacion_termica = datos_clima.get("sensacion_termica", temperatura)
         humedad = datos_clima.get("humedad", "N/A")
         viento = datos_clima.get("viento", "N/A")
         condicion = datos_clima.get("condicion", "N/A")
@@ -204,12 +206,14 @@ def consejo_vestimenta_real(datos_clima):
             f"datos meteorológicos:\n\n"
             f"- Ciudad: {ciudad}\n"
             f"- Temperatura: {temperatura}°C\n"
+            f"- Sensación térmica: {sensacion_termica}°C\n"
             f"- Humedad: {humedad}%\n"
             f"- Viento: {viento} km/h\n"
             f"- Condición: {condicion}\n\n"
             f"Respondé en español rioplatense (argentino), de forma "
-            f"amigable y práctica. Incluí recomendaciones específicas "
-            f"de prendas, calzado y accesorios. Máximo 6 líneas."
+            f"amigable y práctica. Priorizá la sensación térmica para "
+            f"decidir el abrigo. Incluí recomendaciones específicas de "
+            f"prendas, calzado y accesorios. Máximo 6 líneas."
         )
 
         with warnings.catch_warnings():
@@ -254,8 +258,8 @@ def consejo_vestimenta(datos_clima):
     En caso de fallo, cae automáticamente al modo mock.
 
     Args:
-        datos_clima: dict con keys: temperatura, humedad, viento,
-                     condicion, ciudad.
+        datos_clima: dict con keys: temperatura, sensacion_termica,
+                     humedad, viento, condicion, ciudad.
 
     Returns:
         str: Consejo de vestimenta generado.
@@ -292,7 +296,8 @@ def menu_consejo_ia(ultimo_clima=None):
         datos_clima = ultimo_clima
         mostrar_info(
             f"Usando datos del clima de {datos_clima.get('ciudad', '???')} "
-            f"({datos_clima.get('temperatura', '?')}°C)"
+            f"({datos_clima.get('temperatura', '?')}°C, "
+            f"sensación {datos_clima.get('sensacion_termica', datos_clima.get('temperatura', '?'))}°C)"
         )
     else:
         # Preguntar si desea ingresar datos manualmente
@@ -319,6 +324,13 @@ def menu_consejo_ia(ultimo_clima=None):
             mostrar_error("Temperatura inválida, usando 20°C por defecto.")
             temperatura = 20.0
 
+        sensacion_str = input_hacker("Sensación térmica (°C, Enter para usar la temperatura)")
+        try:
+            sensacion_termica = float(sensacion_str) if sensacion_str else temperatura
+        except (ValueError, TypeError):
+            mostrar_error("Sensación térmica inválida, usando la temperatura como referencia.")
+            sensacion_termica = temperatura
+
         hum_str = input_hacker("Humedad (%)")
         try:
             humedad = int(hum_str)
@@ -340,6 +352,7 @@ def menu_consejo_ia(ultimo_clima=None):
         datos_clima = {
             "ciudad": ciudad,
             "temperatura": temperatura,
+            "sensacion_termica": sensacion_termica,
             "humedad": humedad,
             "viento": viento,
             "condicion": condicion,

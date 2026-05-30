@@ -29,8 +29,8 @@ def cargar_historial():
     """Lee el archivo CSV de historial global y devuelve una lista de dicts.
 
     Cada diccionario tiene las claves correspondientes a las columnas
-    del CSV: fecha, hora, usuario, ciudad, temperatura, humedad,
-    viento, condicion.
+    del CSV: fecha, hora, usuario, ciudad, temperatura,
+    sensacion_termica, humedad, viento, condicion.
 
     Returns:
         list[dict]: Lista de registros del historial. Vacía si el
@@ -92,13 +92,23 @@ def menu_historial_personal(usuario):
         return
 
     # ── Construir filas para la tabla ────────────────────────
-    columnas = ["Fecha", "Hora", "Ciudad", "Temp (°C)", "Humedad (%)", "Viento (km/h)", "Condición"]
+    columnas = [
+        "Fecha",
+        "Hora",
+        "Ciudad",
+        "Temp (°C)",
+        "Sensación (°C)",
+        "Humedad (%)",
+        "Viento (km/h)",
+        "Condición",
+    ]
     filas = [
         [
             r.get("fecha", ""),
             r.get("hora", ""),
             r.get("ciudad", ""),
             r.get("temperatura", ""),
+            r.get("sensacion_termica") or r.get("temperatura", ""),
             r.get("humedad", ""),
             r.get("viento", ""),
             r.get("condicion", ""),
@@ -143,18 +153,26 @@ def menu_estadisticas_globales():
 
     # Temperatura promedio global
     temperaturas = []
+    sensaciones = []
     for r in historial:
         try:
             temperaturas.append(float(r.get("temperatura", 0)))
         except (ValueError, TypeError):
             pass  # Ignorar registros con temperatura inválida
 
+        try:
+            sensaciones.append(float(r.get("sensacion_termica") or r.get("temperatura", 0)))
+        except (ValueError, TypeError):
+            pass  # Ignorar registros con sensación térmica inválida
+
     temp_promedio = sum(temperaturas) / len(temperaturas) if temperaturas else 0.0
+    sensacion_promedio = sum(sensaciones) / len(sensaciones) if sensaciones else 0.0
 
     # ── Mostrar estadísticas ─────────────────────────────────
     mostrar_estadistica("Ciudad más consultada", f"{ciudad_top} ({ciudad_top_count} consultas)", icono="[#]")
     mostrar_estadistica("Total de consultas", str(total_consultas), icono="[*]")
     mostrar_estadistica("Temperatura promedio global", f"{temp_promedio:.1f}°C", icono="[+]")
+    mostrar_estadistica("Sensación térmica promedio", f"{sensacion_promedio:.1f}°C", icono="[~]")
 
     # ── Top 5 ciudades más consultadas ───────────────────────
     top_5 = conteo_ciudades.most_common(5)

@@ -7,9 +7,10 @@ El proyecto fue diseñado con un fuerte enfoque en la experiencia de usuario en 
 ## Características Principales
 
 *   **Autenticación Segura:** Sistema de registro e inicio de sesión. Incluye una validación estricta de contraseñas con feedback en tiempo real y un indicador visual de seguridad (0 a 5 niveles).
-*   **Consulta Climática:** Permite obtener el clima actual de cualquier ciudad. Puede operar de forma simulada (datos generados localmente) o mediante conexión real a la API de OpenWeatherMap.
+*   **Consulta Climática:** Permite obtener el clima actual de cualquier ciudad, incluyendo temperatura, sensación térmica, humedad, viento y condición climática. Puede operar de forma simulada (datos generados localmente) o mediante conexión real a la API de OpenWeatherMap.
 *   **Historial y Estadísticas:** Guarda automáticamente cada consulta en archivos CSV. Los usuarios pueden consultar su historial personal (con opción de filtrado por ciudad) y visualizar estadísticas globales como la ciudad más buscada o la temperatura promedio.
-*   **Asistente IA de Vestimenta:** Integración con Google Gemini para ofrecer consejos prácticos sobre qué ropa usar, basándose en la temperatura, humedad, condición climática y velocidad del viento.
+*   **Asistente IA de Vestimenta:** Integración con Google Gemini para ofrecer consejos prácticos sobre qué ropa usar, basándose en la temperatura, sensación térmica, humedad, condición climática y velocidad del viento.
+*   **Acerca de:** Documentación integrada en la aplicación con explicación de menús, archivos, APIs, seguridad, análisis de datos y equipo desarrollador.
 
 ## Requisitos del Sistema
 
@@ -47,7 +48,7 @@ Para iniciar la aplicación, ejecuta el archivo principal desde la terminal:
 python main.py
 ```
 
-El sistema presentará un menú interactivo. Puedes navegar por las opciones utilizando las teclas de dirección (flechas arriba/abajo) y confirmar tu selección con la tecla Enter.
+El sistema presentará un menú interactivo. Puedes navegar por las opciones utilizando las teclas de dirección (flechas arriba/abajo) y confirmar tu selección con la tecla Enter. Una vez iniciada la sesión, la salida directa se realiza cerrando sesión y luego eligiendo `Salir` en el Menú de Acceso.
 
 ## Estructura del Proyecto
 
