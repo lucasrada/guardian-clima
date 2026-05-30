@@ -1,4 +1,5 @@
 import csv
+from types import SimpleNamespace
 
 import auth
 import clima
@@ -94,3 +95,20 @@ def test_consejo_mock_incluye_riesgos_climaticos():
     assert "paraguas" in consejo.lower()
     assert "rompevientos" in consejo.lower()
     assert "humedad" in consejo.lower()
+
+
+def test_extraer_texto_gemini_ignora_partes_no_texto():
+    respuesta = SimpleNamespace(
+        candidates=[
+            SimpleNamespace(
+                content=SimpleNamespace(
+                    parts=[
+                        SimpleNamespace(thought_signature="abc123"),
+                        SimpleNamespace(text="Usá abrigo liviano."),
+                    ]
+                )
+            )
+        ]
+    )
+
+    assert ia._extraer_texto_gemini(respuesta) == "Usá abrigo liviano."

@@ -7,6 +7,10 @@
 # generadas localmente (modo mock).
 # ══════════════════════════════════════════════════════════════
 
+from __future__ import annotations
+
+import warnings
+
 from config import USE_REAL_API, GEMINI_API_KEY, GEMINI_MODEL
 from ui import (
     input_hacker,
@@ -16,6 +20,29 @@ from ui import (
     mostrar_info,
     pausar,
 )
+
+_PYTHON_EOL_WARNING = r".*Python version 3\.9 past its end of life.*"
+
+
+def _obtener_valor(objeto, atributo, default=None):
+    """Obtiene un atributo de objetos SDK o clave de dicts."""
+    if isinstance(objeto, dict):
+        return objeto.get(atributo, default)
+    return getattr(objeto, atributo, default)
+
+
+def _extraer_texto_gemini(respuesta) -> str | None:
+    """Extrae solo las partes de texto de una respuesta Gemini."""
+    textos = []
+    for candidato in _obtener_valor(respuesta, "candidates", []) or []:
+        contenido = _obtener_valor(candidato, "content")
+        for parte in _obtener_valor(contenido, "parts", []) or []:
+            texto = _obtener_valor(parte, "text")
+            if texto:
+                textos.append(str(texto))
+
+    texto_final = "\n".join(textos).strip()
+    return texto_final or None
 
 
 # ══════════════════════════════════════════════════════════════
@@ -156,7 +183,14 @@ def consejo_vestimenta_real(datos_clima):
         return None
 
     try:
-        from google import genai
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=_PYTHON_EOL_WARNING,
+                category=FutureWarning,
+                module=r"google\.(auth|oauth2).*",
+            )
+            from google import genai
 
         temperatura = datos_clima.get("temperatura", "N/A")
         humedad = datos_clima.get("humedad", "N/A")
@@ -178,12 +212,25 @@ def consejo_vestimenta_real(datos_clima):
             f"de prendas, calzado y accesorios. Máximo 6 líneas."
         )
 
-        cliente = genai.Client(api_key=GEMINI_API_KEY)
-        respuesta = cliente.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-        )
-        return respuesta.text
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=_PYTHON_EOL_WARNING,
+                category=FutureWarning,
+                module=r"google\.(auth|oauth2).*",
+            )
+            cliente = genai.Client(api_key=GEMINI_API_KEY)
+            respuesta = cliente.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+            )
+
+        texto_respuesta = _extraer_texto_gemini(respuesta)
+        if texto_respuesta:
+            return texto_respuesta
+
+        mostrar_error("Gemini no devolvió texto en la respuesta.")
+        return None
 
     except ImportError:
         mostrar_error(
