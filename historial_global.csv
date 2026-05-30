@@ -1,0 +1,10 @@
+fecha,hora,usuario,ciudad,temperatura,sensacion_termica,humedad,viento,condicion
+2026-05-30,09:10:00,admin,Buenos Aires,4.5,1.7,96,33.5,Lluvia ligera
+2026-05-30,09:22:00,admin,Mendoza,4.1,1.1,92,36.1,Parcialmente nublado
+2026-05-30,09:35:00,itba,Salta,25.9,25.9,99,4.9,Lluvia fuerte
+2026-05-30,10:05:00,admin,El Bolsón,-1.8,-5.9,41,49.7,Parcialmente nublado
+2026-05-30,10:18:00,itba,Córdoba,7.9,7.9,92,8.2,Nevado
+2026-05-30,10:40:00,admin,Mendoza,4.1,1.1,92,36.1,Parcialmente nublado
+2026-05-30,11:03:00,itba,Rosario,30.2,32.1,75,18.9,Nublado
+2026-05-30,11:25:00,admin,Buenos Aires,4.5,1.7,96,33.5,Lluvia ligera
+2026-05-30,11:48:00,itba,Mar del Plata,9.9,8,63,23.4,Soleado

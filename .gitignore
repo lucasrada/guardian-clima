@@ -21,6 +21,3 @@ Thumbs.db
 
 .pytest_cache/
 .ruff_cache/
-
-# CSV data (generated at runtime)
-historial_global.csv
